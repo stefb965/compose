@@ -1068,7 +1068,7 @@ class Service(object):
         )
 
         try:
-            all_events = stream_output(build_output, sys.stdout)
+            all_events = list(stream_output(build_output, sys.stdout))
         except StreamOutputError as e:
             raise BuildError(self, six.text_type(e))
 
@@ -1183,11 +1183,11 @@ class Service(object):
             output = self.client.pull(repo, **kwargs)
             if silent:
                 with open(os.devnull, 'w') as devnull:
-                    return progress_stream.get_digest_from_pull(
-                        stream_output(output, devnull))
+                    for event in stream_output(output, devnull):
+                        yield event
             else:
-                return progress_stream.get_digest_from_pull(
-                    stream_output(output, sys.stdout))
+                for event in stream_output(output, sys.stdout):
+                    yield event
         except (StreamOutputError, NotFound) as e:
             if not ignore_pull_failures:
                 raise
